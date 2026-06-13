@@ -32,7 +32,7 @@ function BusinessCardMenu({ biz, onClose }) {
         Admin Manager
       </a>
       <a
-        href={`/store?business=${biz.id}`}
+        href={`/store/${biz.subdomain}`}
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-200 hover:bg-white/10 transition-colors"
@@ -64,7 +64,7 @@ function BusinessCard({ biz }) {
       )}
 
       {/* Info — clicking goes to store */}
-      <a href={`/store?business=${biz.id}`} className="flex-1 min-w-0 block">
+      <a href={`/store/${biz.subdomain}`} className="flex-1 min-w-0 block">
         <p className="font-semibold text-white truncate">{biz.name}</p>
         {biz.tagline && (
           <p className="text-xs text-slate-400 truncate mt-0.5">{biz.tagline}</p>

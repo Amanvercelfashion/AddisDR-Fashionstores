@@ -47,7 +47,7 @@ export default function App() {
 
             {/* ── Business store + admin (business context) ─── */}
             <Route
-              path="/store"
+              path="/store/:subdomain"
               element={
                 <BusinessProvider>
                   <ThemeProvider>

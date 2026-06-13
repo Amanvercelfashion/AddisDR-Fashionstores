@@ -19,7 +19,7 @@ export default function CheckoutPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (items.length === 0 && !success) navigate(businessId ? `/store?business=${businessId}` : '/');
+    if (items.length === 0 && !success) navigate(business?.subdomain ? `/store/${business.subdomain}` : '/');
   }, [items, success, navigate, businessId]);
 
   useEffect(() => {
@@ -78,7 +78,7 @@ export default function CheckoutPage() {
     }
   };
 
-  const backHref = businessId ? `/store?business=${businessId}` : '/';
+  const backHref = business?.subdomain ? `/store/${business.subdomain}` : '/';
 
   if (success) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">

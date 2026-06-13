@@ -1,28 +1,14 @@
 /**
  * BusinessContext — resolves and provides the current business_id + business data.
  *
- * Resolution order (NO localStorage fallback — root URL is never a store):
- *  1. Subdomain  e.g. chic.fashionstores-addisdr.vercel.app  → subdomain = "chic"
- *  2. ?business=<id>  query param  (dev / direct link)
+ * Resolution order:
+ *  1. Path-based:  /store/:subdomain  → calls getBusinessBySubdomain(subdomain)
+ *  2. Query param: ?business=<id>     → calls getBusiness(id)
  */
 import { createContext, useContext, useState, useEffect } from 'react';
 import { getBusiness, getBusinessBySubdomain } from '../api';
 
 const BusinessContext = createContext(null);
-
-function detectSubdomain() {
-  const host = window.location.hostname;
-  if (host === 'localhost' || host === '127.0.0.1') return null;
-  const parts = host.split('.');
-  const isVercel = host.endsWith('.vercel.app');
-  // vercel.app domains: main = name.vercel.app (3 parts), subdomain = x.name.vercel.app (4+)
-  // Custom domains: main = example.com (2 parts), subdomain = x.example.com (3+)
-  const minParts = isVercel ? 4 : 3;
-  if (parts.length >= minParts && !['www', 'superadmin'].includes(parts[0])) {
-    return parts[0];
-  }
-  return null;
-}
 
 export function BusinessProvider({ children }) {
   const [businessId, setBusinessId] = useState(null);
@@ -35,9 +21,13 @@ export function BusinessProvider({ children }) {
       setLoading(true);
       setError(null);
 
+      const path = window.location.pathname;
       const params = new URLSearchParams(window.location.search);
       const queryId = params.get('business');
-      const subdomain = detectSubdomain();
+
+      // 1. Path-based: /store/:subdomain
+      const storeMatch = path.match(/^\/store\/([^/]+)/);
+      const subdomain = storeMatch ? storeMatch[1] : null;
 
       try {
         let resolvedId = null;
@@ -50,7 +40,6 @@ export function BusinessProvider({ children }) {
           resolvedId = parseInt(queryId, 10);
           resolvedBusiness = await getBusiness(resolvedId);
         }
-        // No localStorage fallback — root URL stays as platform home
 
         if (resolvedId) {
           setBusinessId(resolvedId);
