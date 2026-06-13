@@ -2,15 +2,15 @@
  * BusinessContext — resolves and provides the current business_id + business data.
  *
  * Resolution order:
- *  1. Path-based:  /store/:subdomain  → calls getBusinessBySubdomain(subdomain)
- *  2. Query param: ?business=<id>     → calls getBusiness(id)
+ *  1. subdomain prop  (passed from route params, e.g. /:subdomain)
+ *  2. Query param:    ?business=<id>     → calls getBusiness(id)
  */
 import { createContext, useContext, useState, useEffect } from 'react';
 import { getBusiness, getBusinessBySubdomain } from '../api';
 
 const BusinessContext = createContext(null);
 
-export function BusinessProvider({ children }) {
+export function BusinessProvider({ children, subdomain: subdomainProp }) {
   const [businessId, setBusinessId] = useState(null);
   const [business, setBusiness] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -21,20 +21,15 @@ export function BusinessProvider({ children }) {
       setLoading(true);
       setError(null);
 
-      const path = window.location.pathname;
       const params = new URLSearchParams(window.location.search);
       const queryId = params.get('business');
-
-      // 1. Path-based: /store/:subdomain
-      const storeMatch = path.match(/^\/store\/([^/]+)/);
-      const subdomain = storeMatch ? storeMatch[1] : null;
 
       try {
         let resolvedId = null;
         let resolvedBusiness = null;
 
-        if (subdomain) {
-          resolvedBusiness = await getBusinessBySubdomain(subdomain);
+        if (subdomainProp) {
+          resolvedBusiness = await getBusinessBySubdomain(subdomainProp);
           resolvedId = resolvedBusiness.id;
         } else if (queryId) {
           resolvedId = parseInt(queryId, 10);
@@ -53,7 +48,7 @@ export function BusinessProvider({ children }) {
     }
 
     resolve();
-  }, []);
+  }, [subdomainProp]);
 
   return (
     <BusinessContext.Provider value={{ businessId, business, loading, error, setBusiness }}>

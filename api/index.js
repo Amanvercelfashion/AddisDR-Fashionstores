@@ -167,6 +167,10 @@ app.post('/api/superadmin/businesses', requireSuperAdmin, upload.single('logo'),
   if (!/^[a-z0-9-]+$/.test(subdomain.trim())) {
     return res.status(400).json({ error: 'Subdomain may only contain lowercase letters, numbers, and hyphens' });
   }
+  const reserved = ['superadmin', 'adminmanager', 'checkout', 'store', 'api', 'www'];
+  if (reserved.includes(subdomain.trim().toLowerCase())) {
+    return res.status(400).json({ error: `"${subdomain.trim()}" is a reserved name and cannot be used as a subdomain` });
+  }
 
   let logo_url = '';
   if (req.file) {
@@ -209,6 +213,10 @@ app.put('/api/superadmin/businesses/:id', requireSuperAdmin, upload.single('logo
 
   if (subdomain && !/^[a-z0-9-]+$/.test(subdomain.trim())) {
     return res.status(400).json({ error: 'Invalid subdomain format' });
+  }
+  const reserved = ['superadmin', 'adminmanager', 'checkout', 'store', 'api', 'www'];
+  if (subdomain && reserved.includes(subdomain.trim().toLowerCase())) {
+    return res.status(400).json({ error: `"${subdomain.trim()}" is a reserved name and cannot be used as a subdomain` });
   }
 
   try {

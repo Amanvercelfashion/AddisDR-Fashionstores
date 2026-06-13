@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { BasketProvider } from './context/BasketContext';
 import { BusinessProvider } from './context/BusinessContext';
 import { SuperAdminProvider } from './context/SuperAdminContext';
@@ -25,6 +25,19 @@ import SuperAdminLayout from './pages/superadmin/SuperAdminLayout';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
 import BusinessesPage from './pages/superadmin/BusinessesPage';
 
+function StoreRoute() {
+  const { subdomain } = useParams();
+  return (
+    <BusinessProvider subdomain={subdomain}>
+      <ThemeProvider>
+        <BasketProvider>
+          <StorePage />
+        </BasketProvider>
+      </ThemeProvider>
+    </BusinessProvider>
+  );
+}
+
 const NotFound = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
     <div className="text-center">
@@ -46,18 +59,7 @@ export default function App() {
             <Route path="/" element={<PlatformHome />} />
 
             {/* ── Business store + admin (business context) ─── */}
-            <Route
-              path="/store/:subdomain"
-              element={
-                <BusinessProvider>
-                  <ThemeProvider>
-                    <BasketProvider>
-                      <StorePage />
-                    </BasketProvider>
-                  </ThemeProvider>
-                </BusinessProvider>
-              }
-            />
+            <Route path="/:subdomain" element={<StoreRoute />} />
             <Route
               path="/checkout"
               element={

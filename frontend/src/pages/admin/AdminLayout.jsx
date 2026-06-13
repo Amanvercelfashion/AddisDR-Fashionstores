@@ -57,8 +57,7 @@ export default function AdminLayout() {
   // Not logged in → show password gate
   if (!isLoggedIn(businessId)) return <AdminLogin />;
 
-  const bizParam = `?business=${businessId}`;
-  const storeHref = `/store${bizParam}`;
+  const storeHref = business?.subdomain ? `/${business.subdomain}` : `/adminmanager?business=${businessId}`;
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
