@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { getBusiness } from './api';
 import { BasketProvider } from './context/BasketContext';
 import { BusinessProvider } from './context/BusinessContext';
 import { SuperAdminProvider } from './context/SuperAdminContext';
@@ -24,6 +26,25 @@ import SuperAdminLogin from './pages/superadmin/SuperAdminLogin';
 import SuperAdminLayout from './pages/superadmin/SuperAdminLayout';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
 import BusinessesPage from './pages/superadmin/BusinessesPage';
+
+function OldStoreRedirect() {
+  const { subdomain } = useParams();
+  return <Navigate to={`/${subdomain}`} replace />;
+}
+
+function OldStoreQueryRedirect() {
+  const [params] = useState(() => new URLSearchParams(window.location.search));
+  const bizId = params.get('business');
+  const [done, setDone] = useState(false);
+  useEffect(() => {
+    if (!bizId) { setDone(true); return; }
+    getBusiness(bizId).then(biz => {
+      window.location.replace(`/${biz.subdomain}`);
+    }).catch(() => setDone(true));
+  }, [bizId]);
+  if (done) return <Navigate to="/" replace />;
+  return <div className="min-h-screen flex items-center justify-center"><div className="h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
+}
 
 function StoreRoute() {
   const { subdomain } = useParams();
@@ -58,8 +79,11 @@ export default function App() {
             {/* ── Platform home ─────────────────────────────── */}
             <Route path="/" element={<PlatformHome />} />
 
-            {/* ── Business store + admin (business context) ─── */}
-            <Route path="/:subdomain" element={<StoreRoute />} />
+            {/* ── Business storefront ──────────────────────── */}
+            {/* Redirect old /store?business=X → /subdomain */}
+            <Route path="/store" element={<OldStoreQueryRedirect />} />
+            {/* Redirect old /store/:subdomain → /:subdomain */}
+            <Route path="/store/:subdomain" element={<OldStoreRedirect />} />
             <Route
               path="/checkout"
               element={
@@ -94,6 +118,9 @@ export default function App() {
               <Route path="dashboard" element={<SuperAdminDashboard />} />
               <Route path="businesses" element={<BusinessesPage />} />
             </Route>
+
+            {/* ── Store route (catch-all for single-segment paths) ─── */}
+            <Route path="/:subdomain" element={<StoreRoute />} />
 
             {/* ── 404 ──────────────────────────────────────── */}
             <Route path="*" element={<NotFound />} />
