@@ -2,7 +2,7 @@
  * BusinessContext — resolves and provides the current business_id + business data.
  *
  * Resolution order (NO localStorage fallback — root URL is never a store):
- *  1. Subdomain  e.g. furniture.yoursite.com  → subdomain = "furniture"
+ *  1. Subdomain  e.g. chic.fashionstores-addisdr.vercel.app  → subdomain = "chic"
  *  2. ?business=<id>  query param  (dev / direct link)
  */
 import { createContext, useContext, useState, useEffect } from 'react';
@@ -12,9 +12,13 @@ const BusinessContext = createContext(null);
 
 function detectSubdomain() {
   const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1') return null;
   const parts = host.split('.');
-  // Valid subdomain: has 2+ parts, first part isn't 'www', 'localhost', or 'superadmin'
-  if (parts.length >= 2 && !['www', 'localhost', 'superadmin'].includes(parts[0])) {
+  const isVercel = host.endsWith('.vercel.app');
+  // vercel.app domains: main = name.vercel.app (3 parts), subdomain = x.name.vercel.app (4+)
+  // Custom domains: main = example.com (2 parts), subdomain = x.example.com (3+)
+  const minParts = isVercel ? 4 : 3;
+  if (parts.length >= minParts && !['www', 'superadmin'].includes(parts[0])) {
     return parts[0];
   }
   return null;

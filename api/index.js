@@ -57,6 +57,11 @@ app.use(cors({
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return callback(null, true);
+    // Allow wildcard subdomains of fashionstores-addisdr.vercel.app
+    const vercelBase = 'fashionstores-addisdr.vercel.app';
+    if (origin === `https://${vercelBase}` || new RegExp(`^https://[a-z0-9-]+\\.${vercelBase.replace(/\./g, '\\.')}$`).test(origin)) {
+      return callback(null, true);
+    }
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true
