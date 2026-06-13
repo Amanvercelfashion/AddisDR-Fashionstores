@@ -20,15 +20,26 @@ function getSupabase() {
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
     throw new Error('SUPABASE_URL and SUPABASE_SERVICE_KEY must be set');
   }
+  console.log('[getSupabase] SUPABASE_URL:', process.env.SUPABASE_URL);
+  console.log('[getSupabase] SUPABASE_SERVICE_KEY exists:', !!process.env.SUPABASE_SERVICE_KEY, '| length:', process.env.SUPABASE_SERVICE_KEY.length);
   return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 }
 
 async function uploadToSupabase(buffer, fileName, contentType) {
   const sb = getSupabase();
-  const { error } = await sb.storage
-    .from('store-uploads')
-    .upload(fileName, buffer, { contentType, upsert: true });
-  if (error) throw error;
+  let error;
+  try {
+    ({ error } = await sb.storage
+      .from('store-uploads')
+      .upload(fileName, buffer, { contentType, upsert: true }));
+  } catch (err) {
+    console.log('[uploadToSupabase] upload threw:', JSON.stringify(err));
+    throw err;
+  }
+  if (error) {
+    console.log('[uploadToSupabase] upload error:', JSON.stringify(error));
+    throw error;
+  }
   const { data: { publicUrl } } = sb.storage
     .from('store-uploads')
     .getPublicUrl(fileName);
