@@ -9,7 +9,7 @@ This guide walks through migrating from the local SQLite database to Supabase (P
 1. Go to [supabase.com](https://supabase.com) and sign in.
 2. Click **New project**.
 3. Fill in:
-   - **Name:** `fashion-stores` (or your choice)
+   - **Name:** `multi-store-platform` (or your choice)
    - **Database Password:** Save this securely
    - **Region:** Choose the closest to your users
 4. Wait for the database to provision (~2 minutes).
@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS businesses (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   subdomain TEXT NOT NULL UNIQUE,
+  industry TEXT DEFAULT 'general',
   logo_url TEXT DEFAULT '',
   tagline TEXT DEFAULT '',
   about TEXT DEFAULT '',
@@ -518,14 +519,14 @@ router.get('/stats', requireSuperAdmin, async (req, res) => {
 Instead of saving files to `backend/uploads/`, upload them to Supabase Storage.
 
 1. In Supabase dashboard, go to **Storage**.
-2. Create a new bucket called `fashion-store-uploads`.
+2. Create a new bucket called `store-uploads`.
 3. Set the bucket to **public** so images are accessible via URL.
 4. Go to **Policy** and add a policy to allow public read access:
 
 ```sql
 CREATE POLICY "Public Read Access"
 ON storage.objects FOR SELECT
-USING (bucket_id = 'fashion-store-uploads');
+USING (bucket_id = 'store-uploads');
 ```
 
 ### Multer → Supabase Storage Upload
@@ -549,11 +550,11 @@ router.post('/businesses', requireSuperAdmin, upload.single('logo'), async (req,
     const ext = path.extname(req.file.originalname).toLowerCase();
     const fileName = `logos/${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
     const { data, error } = await supabase.storage
-      .from('fashion-store-uploads')
+      .from('store-uploads')
       .upload(fileName, req.file.buffer, { contentType: req.file.mimetype });
     if (error) throw error;
     const { data: { publicUrl } } = supabase.storage
-      .from('fashion-store-uploads')
+      .from('store-uploads')
       .getPublicUrl(fileName);
     logo_url = publicUrl;
   }
@@ -624,6 +625,7 @@ const stores = [
     subdomain: 'chic',
     tagline: "Trendy women's fashion for every occasion",
     about: 'Chic Boutique brings you the latest trends in women\'s fashion.',
+    industry: 'fashion',
     phone: '+251-911-111-111',
     address: 'Bole Road, Addis Ababa, Ethiopia',
     color_primary: '#e91e63',
@@ -662,7 +664,7 @@ async function seed() {
         `INSERT INTO businesses (name, subdomain, tagline, about, phone, address, color_primary, color_secondary, color_tertiary, admin_password, status)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active') RETURNING id`,
         [store.name, store.subdomain, store.tagline, store.about, store.phone, store.address,
-         store.color_primary, store.color_secondary, store.color_tertiary, 'fashion2024']
+         store.color_primary, store.color_secondary, store.color_tertiary, 'store2024']
       );
       const businessId = rows[0].id;
       const numProducts = store.categories.reduce((s, c) => s + c.products.length, 0);

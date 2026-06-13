@@ -8,7 +8,7 @@ const pool = new Pool({
 });
 
 const SEED = {
-  adminPassword: 'fashion2024',
+  adminPassword: 'store2024',
 };
 
 const stores = [

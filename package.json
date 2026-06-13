@@ -1,11 +1,11 @@
 {
-  "name": "product-catalog-template",
-  "version": "1.0.0",
-  "description": "White-label fashion store catalog + order capture platform",
+  "name": "multi-store-platform",
+  "version": "2.0.0",
+  "description": "White-label multi-industry store catalog + order capture platform",
   "scripts": {
     "backend": "node backend/server.js",
     "frontend": "npm run dev --prefix frontend",
-    "seed": "node backend/seed-fashion-stores.js",
+    "seed": "node backend/seed-stores.js",
     "install:all": "npm install --prefix backend && npm install --prefix frontend",
     "build": "npm run build --prefix frontend"
   }

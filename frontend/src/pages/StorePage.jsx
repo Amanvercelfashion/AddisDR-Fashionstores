@@ -82,10 +82,10 @@ export default function StorePage() {
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
         <div className="mb-6">
           <h2 className="text-2xl font-bold" style={{ color: safeSecondary }}>
-            Our Collection
+            Our Products
           </h2>
           <p className="text-sm mt-1" style={{ color: safeSecondary, opacity: 0.65 }}>
-            Browse our fashion collection and place your order
+            Browse our products and place your order
           </p>
         </div>
 
@@ -120,7 +120,7 @@ export default function StorePage() {
             style={{ color: safeSecondary, opacity: 0.5 }}
           >
             <Package size={56} className="mb-3" />
-            <p className="text-lg font-medium">No fashion items found</p>
+            <p className="text-lg font-medium">No products found</p>
             {search && (
               <p className="text-sm mt-1">
                 No results for &quot;{search}&quot;.{' '}

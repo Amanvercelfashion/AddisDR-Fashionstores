@@ -19,7 +19,7 @@ router.get('/', wrapAsync(async (req, res) => {
 
 router.get('/by-subdomain/:subdomain', wrapAsync(async (req, res) => {
   const { rows } = await pool.query(
-    "SELECT id, name, subdomain, logo_url, tagline, about, phone, address, status FROM businesses WHERE subdomain = $1",
+    "SELECT id, name, subdomain, industry, logo_url, tagline, about, phone, address, status FROM businesses WHERE subdomain = $1",
     [req.params.subdomain]
   );
 
@@ -30,7 +30,7 @@ router.get('/by-subdomain/:subdomain', wrapAsync(async (req, res) => {
 
 router.get('/directory', wrapAsync(async (req, res) => {
   const { rows } = await pool.query(
-    "SELECT id, name, subdomain, logo_url, tagline, status FROM businesses WHERE status = 'active' ORDER BY name ASC"
+    "SELECT id, name, subdomain, industry, logo_url, tagline, status FROM businesses WHERE status = 'active' ORDER BY name ASC"
   );
   res.json(rows);
 }));

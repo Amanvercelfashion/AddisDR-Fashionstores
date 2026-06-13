@@ -3,7 +3,7 @@ import { ShoppingCart, Settings, ExternalLink } from 'lucide-react';
 import { useBasket } from '../../context/BasketContext';
 import { useBusiness } from '../../context/BusinessContext';
 
-function AdminMenu({ businessId, onClose }) {
+function AdminMenu({ businessId, subdomain, onClose }) {
   const ref = useRef();
 
   useEffect(() => {
@@ -32,7 +32,7 @@ function AdminMenu({ businessId, onClose }) {
         Admin Manager
       </a>
       <a
-        href={`/${company?.subdomain || businessId}`}
+        href={`/${subdomain || businessId}`}
         className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
         onClick={onClose}
       >
@@ -101,19 +101,18 @@ export default function Header({ company }) {
             <div className="relative">
               <button
                 onClick={() => setMenuOpen(o => !o)}
-                className="flex flex-col items-center justify-center gap-[5px] w-9 h-9 rounded-lg transition-colors"
-                style={{ backgroundColor: 'rgba(var(--on-tertiary-rgb, 255 255 255),0.15)' }}
+                className="flex flex-col items-center justify-center gap-[5px] w-9 h-9 rounded-lg transition-colors hover:opacity-80"
+                style={{ backgroundColor: 'rgba(0,0,0,0.18)' }}
                 aria-label="Admin menu"
                 title="Admin Manager"
               >
-                {/* Lines use --on-tertiary so they're always visible */}
-                <span className="block w-4 h-[2px] rounded-full" style={{ backgroundColor: 'var(--on-tertiary)' }} />
-                <span className="block w-4 h-[2px] rounded-full" style={{ backgroundColor: 'var(--on-tertiary)' }} />
-                <span className="block w-4 h-[2px] rounded-full" style={{ backgroundColor: 'var(--on-tertiary)' }} />
+                <span className="block w-4 h-[2px] rounded-full" style={{ backgroundColor: 'var(--on-tertiary, #ffffff)' }} />
+                <span className="block w-4 h-[2px] rounded-full" style={{ backgroundColor: 'var(--on-tertiary, #ffffff)' }} />
+                <span className="block w-4 h-[2px] rounded-full" style={{ backgroundColor: 'var(--on-tertiary, #ffffff)' }} />
               </button>
 
               {menuOpen && (
-                <AdminMenu businessId={businessId} onClose={() => setMenuOpen(false)} />
+                <AdminMenu businessId={businessId} subdomain={company?.subdomain} onClose={() => setMenuOpen(false)} />
               )}
             </div>
           )}

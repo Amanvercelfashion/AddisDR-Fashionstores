@@ -11,6 +11,19 @@ import {
 import { useSuperAdmin } from '../../context/SuperAdminContext';
 import axios from 'axios';
 
+// ── Industry options ──────────────────────────────────────────────────────────
+
+const INDUSTRIES = [
+  { value: 'fashion', label: 'Fashion & Apparel', icon: '👗' },
+  { value: 'electronics', label: 'Electronics & Gadgets', icon: '📱' },
+  { value: 'furniture', label: 'Furniture & Home', icon: '🪑' },
+  { value: 'gifts', label: 'Gifts & Souvenirs', icon: '🎁' },
+  { value: 'groceries', label: 'Groceries & Food', icon: '🛒' },
+  { value: 'sports', label: 'Sports & Outdoors', icon: '⚽' },
+  { value: 'books', label: 'Books & Stationery', icon: '📚' },
+  { value: 'general', label: 'General Store', icon: '🏪' },
+];
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function nameToSubdomain(name) {
@@ -139,6 +152,7 @@ function BusinessForm({ business, onSave, onCancel }) {
   const [form, setForm] = useState({
     name: business?.name || '',
     subdomain: business?.subdomain || '',
+    industry: business?.industry || 'general',
     tagline: business?.tagline || '',
     about: business?.about || '',
     phone: business?.phone || '',
@@ -237,6 +251,14 @@ function BusinessForm({ business, onSave, onCancel }) {
               {form.subdomain && (
                 <p className="text-xs text-gray-400 mt-1">Preview: <span className="font-mono text-gray-600">{form.subdomain}.yoursite.com</span></p>
               )}
+            </div>
+            <div>
+              <label className="label">Industry / Store Type</label>
+              <select value={form.industry} onChange={e => f('industry', e.target.value)} className="input-field">
+                {INDUSTRIES.map(ind => (
+                  <option key={ind.value} value={ind.value}>{ind.icon} {ind.label}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="label">Tagline</label>
@@ -426,7 +448,7 @@ function HamburgerMenu({ biz, token, onEdit, onToggle, onDelete, onPasswordSet }
           </a>
 
           <a
-            href={`https://fashionstores-addisdr.vercel.app/${biz.subdomain}`}
+            href={`/${biz.subdomain}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"

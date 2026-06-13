@@ -1,32 +1,32 @@
-# 👗 White-Label Fashion Store Platform
+# Multi-Store Platform
 
-A lightweight, reusable fashion store catalog + order request system.  
+A lightweight, white-label multi-industry store catalog + order request system.
 Orders go to Telegram. No payments, no accounts — just browse → select → request.
 
----
+## Sample Stores
 
-## 🎨 Sample Fashion Stores
+The project includes a seed script that creates **5 sample stores** across multiple industries:
 
-The project includes a seed script that creates **3 sample fashion stores**, each with **5 categories** and **15 products** (3 per category):
-
-| Store | Theme | Categories | 
-|-------|-------|-----------|
-| **Chic Boutique** | Women's fashion (pink/rose) | Tops, Bottoms, Dresses, Outerwear, Accessories |
-| **Urban Threads** | Streetwear (teal/navy) | T-Shirts, Hoodies, Jeans, Jackets, Sneakers |
-| **Elegance & Co.** | Formal wear (gold/navy) | Suits, Shirts & Blouses, Neckwear, Formal Shoes, Accessories |
+| Store | Industry | Categories | Theme |
+|-------|----------|-----------|-------|
+| **TechZone** | Electronics | Smartphones, Laptops, Audio, Accessories, Smart Home | Blue/cyan |
+| **Home & Comfort** | Furniture | Living Room, Bedroom, Dining, Home Office, Decor | Amber/brown |
+| **GiftWorld** | Gifts & Souvenirs | Jewelry, Gift Hampers, Novelty Items, Home Decor Gifts, Accessories | Red/rose |
+| **Chic Boutique** | Fashion | Tops, Bottoms, Dresses, Outerwear, Accessories | Pink/purple |
+| **Urban Threads** | Fashion | T-Shirts, Hoodies, Jeans, Jackets, Sneakers | Teal/navy |
 
 ### Seed the database
 
 ```bash
 cd backend
-node seed-fashion-stores.js
+node seed-stores.js
 ```
 
-Admin password for all sample stores: `fashion2024`
+Admin password for all sample stores: `store2024`
 
 ---
 
-## 🏗 Project Structure
+## Project Structure
 
 ```
 /
@@ -48,7 +48,7 @@ Admin password for all sample stores: `fashion2024`
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Install dependencies
 
@@ -84,29 +84,31 @@ npm run dev
 # Running on http://localhost:5173
 ```
 
-### 4. Seed sample fashion stores (optional)
+### 4. Seed sample stores (optional)
 
 ```bash
 cd backend
-node seed-fashion-stores.js
+node seed-stores.js
 ```
 
 ### 5. Open the app
 
 | URL | Description |
 |-----|-------------|
-| `http://localhost:5173` | Fashion store directory |
-| `http://localhost:5173/store?business=5` | Chic Boutique storefront |
-| `http://localhost:5173/store?business=6` | Urban Threads storefront |
-| `http://localhost:5173/store?business=7` | Elegance & Co. storefront |
-| `http://localhost:5173/adminmanager?business=5` | Chic Boutique admin (pw: `fashion2024`) |
+| `http://localhost:5173` | Store directory (all industries) |
+| `http://localhost:5173/techzone` | TechZone electronics storefront |
+| `http://localhost:5173/home-comfort` | Home & Comfort furniture storefront |
+| `http://localhost:5173/giftworld` | GiftWorld gift shop storefront |
+| `http://localhost:5173/chic` | Chic Boutique fashion storefront |
+| `http://localhost:5173/adminmanager?business=ID` | Store admin panel (pw: `store2024`) |
 
 ---
 
-## ⚙️ Admin Panel Features
+## Admin Panel Features
 
 ### Company Settings (`/adminmanager/settings`)
 - Store name, tagline, logo upload
+- Industry/store type
 - About us text and contact phone
 - Telegram bot token + chat ID
 - Test Telegram connection button
@@ -134,7 +136,22 @@ node seed-fashion-stores.js
 
 ---
 
-## 📱 Telegram Setup
+## Supported Industries
+
+| Industry | Description |
+|----------|-------------|
+| Fashion & Apparel | Clothing, shoes, accessories |
+| Electronics & Gadgets | Phones, laptops, audio, smart home |
+| Furniture & Home | Living room, bedroom, dining, decor |
+| Gifts & Souvenirs | Jewelry, hampers, novelty items |
+| Groceries & Food | Food items, beverages, produce |
+| Sports & Outdoors | Sports equipment, camping gear |
+| Books & Stationery | Books, office supplies, art |
+| General Store | Any other product type |
+
+---
+
+## Telegram Setup
 
 1. Open Telegram and search for `@BotFather`
 2. Send `/newbot` and follow instructions to create a bot
@@ -163,7 +180,7 @@ node seed-fashion-stores.js
 
 ---
 
-## 🌐 Production Deployment
+## Production Deployment
 
 ### Build frontend
 ```bash
@@ -182,22 +199,22 @@ In production mode, the backend serves the frontend `dist/` folder automatically
 
 ---
 
-## 🔁 White-Label Reuse
+## White-Label Reuse
 
-To deploy for a new fashion brand:
+To deploy for a new store:
 
 1. Copy the entire project folder
 2. Set up a Supabase project and run the schema from `SUPABASE_SETUP.md`
 3. Configure `DATABASE_URL` in `backend/.env`
 4. Start the servers
-4. Go to Super Admin → Businesses → Create Business
-5. Configure store name, colors, logo, Telegram bot
-6. Add categories and products via admin panel
-7. Done — live in minutes
+5. Go to Super Admin → Businesses → Create Business
+6. Configure store name, industry, colors, logo, Telegram bot
+7. Add categories and products via admin panel
+8. Done — live in minutes
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -205,20 +222,18 @@ To deploy for a new fashion brand:
 | Styling | TailwindCSS v4 |
 | Charts | Recharts |
 | Icons | Lucide React |
-| Routing | React Router v6 |
+| Routing | React Router v7 |
 | Backend | Node.js + Express |
 | Database | Supabase (PostgreSQL) via `pg` |
 | File uploads | Multer |
 | Notifications | Telegram Bot API |
 | Security | Helmet + rate-limiting |
 
----
 
-## 📝 Notes
+## Notes
 
-- Admin password for sample stores: `fashion2024`
+- Admin password for sample stores: `store2024`
 - Product codes are never reused, even after deletion
 - All prices shown in ETB (can be changed in frontend components)
 - Images stored locally in `backend/uploads/` for development; use Supabase Storage for production
 - Each store has 3 configurable theme colors set in the database
-"# AddisDR-Fashionstores" 

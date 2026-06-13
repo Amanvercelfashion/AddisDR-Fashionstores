@@ -1,9 +1,23 @@
 import { useEffect, useState, useRef } from 'react';
 import {
-  ShieldCheck, Building2, Shirt,
-  ArrowRight, Sparkles, Settings, Eye
+  ShieldCheck, Building2, Shirt, Smartphone, Armchair,
+  Gift, Music, ArrowRight, Sparkles, Settings, Eye
 } from 'lucide-react';
 import axios from 'axios';
+
+const INDUSTRY_ICONS = {
+  fashion:     { icon: Shirt,      color: 'bg-pink-600' },
+  electronics: { icon: Smartphone, color: 'bg-blue-600' },
+  furniture:   { icon: Armchair,   color: 'bg-amber-700' },
+  gifts:       { icon: Gift,       color: 'bg-rose-500' },
+  groceries:   { icon: Music,      color: 'bg-green-600' },
+  sports:      { icon: Music,      color: 'bg-orange-600' },
+  books:       { icon: Music,      color: 'bg-indigo-600' },
+};
+
+function getIndustryIcon(industry) {
+  return INDUSTRY_ICONS[industry] || { icon: Building2, color: 'bg-blue-600' };
+}
 
 // ── Per-business card menu ────────────────────────────────────────────────────
 
@@ -47,6 +61,7 @@ function BusinessCardMenu({ biz, onClose }) {
 
 function BusinessCard({ biz }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { icon: IndustryIcon, color: iconColor } = getIndustryIcon(biz.industry);
 
   return (
     <div className="relative bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-2xl p-4 transition-all flex items-center gap-4">
@@ -58,31 +73,38 @@ function BusinessCard({ biz }) {
           className="h-12 w-12 object-contain rounded-xl flex-shrink-0 bg-white/10"
         />
       ) : (
-        <div className="h-12 w-12 bg-blue-600/30 rounded-xl flex items-center justify-center flex-shrink-0">
-          <Building2 size={20} className="text-blue-400" />
+        <div className={`h-12 w-12 ${iconColor}/30 rounded-xl flex items-center justify-center flex-shrink-0`}>
+          <IndustryIcon size={20} className={`text-white/70`} />
         </div>
       )}
 
       {/* Info — clicking goes to store */}
-      <a href={`/${biz.subdomain}`} className="flex-1 min-w-0 block">
+      <div
+        onClick={() => { window.location.href = `/${biz.subdomain}`; }}
+        className="flex-1 min-w-0 cursor-pointer"
+      >
         <p className="font-semibold text-white truncate">{biz.name}</p>
         {biz.tagline && (
           <p className="text-xs text-slate-400 truncate mt-0.5">{biz.tagline}</p>
         )}
-        <p className="text-xs text-slate-500 font-mono mt-1">{biz.subdomain}</p>
-      </a>
+        <span className="text-xs text-slate-500 font-mono mt-1 block capitalize">{biz.industry || 'store'}</span>
+      </div>
 
       {/* ☰ Hamburger button — always visible */}
-      <div className="relative flex-shrink-0">
+      <div className="relative flex-shrink-0 z-10">
         <button
-          onClick={e => { e.stopPropagation(); setMenuOpen(o => !o); }}
-          className="flex flex-col items-center justify-center gap-[5px] w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+          onMouseDown={e => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            setMenuOpen(prev => !prev);
+          }}
+          className="flex flex-col items-center justify-center gap-[5px] w-9 h-9 rounded-lg bg-white/15 hover:bg-white/30 border border-white/20 hover:border-white/40 transition-colors cursor-pointer"
           aria-label={`Options for ${biz.name}`}
           title="Admin options"
         >
-          <span className="block w-4 h-[2px] bg-white rounded-full" />
-          <span className="block w-4 h-[2px] bg-white rounded-full" />
-          <span className="block w-4 h-[2px] bg-white rounded-full" />
+          <span className="block w-4 h-[2px] bg-white/90 rounded-full" />
+          <span className="block w-4 h-[2px] bg-white/90 rounded-full" />
+          <span className="block w-4 h-[2px] bg-white/90 rounded-full" />
         </button>
 
         {menuOpen && (
@@ -110,10 +132,10 @@ export default function PlatformHome() {
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 border-b border-white/10">
         <div className="flex items-center gap-2.5">
-          <div className="bg-pink-600 rounded-lg p-1.5">
-            <Shirt size={18} className="text-white" />
+          <div className="bg-blue-600 rounded-lg p-1.5">
+            <Building2 size={18} className="text-white" />
           </div>
-          <span className="font-bold text-white text-lg">FashionStore Hub</span>
+          <span className="font-bold text-white text-lg">Store Hub</span>
         </div>
         <a
           href="/superadmin"
@@ -126,19 +148,19 @@ export default function PlatformHome() {
 
       {/* Hero */}
       <div className="flex-1 flex flex-col items-center justify-center text-center px-4 py-20">
-        <div className="inline-flex items-center gap-2 bg-pink-600/20 border border-pink-500/30 text-pink-300 text-xs font-medium px-3 py-1.5 rounded-full mb-6">
+        <div className="inline-flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 text-blue-300 text-xs font-medium px-3 py-1.5 rounded-full mb-6">
           <Sparkles size={12} />
-          Multi-tenant fashion store platform
+          Multi-tenant store platform
         </div>
         <h1 className="text-4xl sm:text-5xl font-extrabold text-white mb-4 leading-tight">
-          Fashion Stores &amp;<br className="hidden sm:block" /> Order Capture
+          Stores &amp;<br className="hidden sm:block" /> Order Capture
         </h1>
         <p className="text-slate-400 text-lg max-w-xl mb-10">
-          Each fashion brand gets its own branded storefront. Customers browse collections and send orders directly to Telegram.
+          Each store gets its own branded storefront. Customers browse products and send orders directly to Telegram.
         </p>
         <a
           href="/superadmin"
-          className="inline-flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
+          className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
         >
           <ShieldCheck size={18} />
           Go to Super Admin
@@ -149,7 +171,7 @@ export default function PlatformHome() {
       {/* Active stores directory */}
       <div className="max-w-5xl mx-auto w-full px-4 pb-16">
           <h2 className="text-center text-sm font-semibold text-slate-500 uppercase tracking-widest mb-6">
-            Active Fashion Stores
+            Active Stores
           </h2>
 
         {loading ? (
@@ -160,8 +182,8 @@ export default function PlatformHome() {
           </div>
         ) : businesses.length === 0 ? (
           <p className="text-center text-slate-600 text-sm py-8">
-            No active fashion stores yet. Create one in the{' '}
-            <a href="/superadmin" className="text-pink-400 hover:underline">Super Admin</a>.
+            No active stores yet. Create one in the{' '}
+            <a href="/superadmin" className="text-blue-400 hover:underline">Super Admin</a>.
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -174,7 +196,7 @@ export default function PlatformHome() {
 
       {/* Footer */}
       <div className="border-t border-white/10 py-4 text-center text-xs text-slate-600">
-        FashionStore Hub &mdash; White-label fashion catalog &amp; order capture
+        Store Hub &mdash; White-label catalog &amp; order capture platform
       </div>
     </div>
   );

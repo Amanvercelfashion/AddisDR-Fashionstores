@@ -26,13 +26,19 @@ function getSupabase() {
 async function uploadToSupabase(buffer, fileName, contentType) {
   const sb = getSupabase();
   const { error } = await sb.storage
-    .from('fashion-store-uploads')
+    .from('store-uploads')
     .upload(fileName, buffer, { contentType, upsert: true });
   if (error) throw error;
   const { data: { publicUrl } } = sb.storage
-    .from('fashion-store-uploads')
+    .from('store-uploads')
     .getPublicUrl(fileName);
   return publicUrl;
+}
+
+function extractStoragePath(url) {
+  if (!url) return null;
+  const match = url.match(/\/object\/(public|authenticated)\/[^/]+\/(.+)/);
+  return match ? match[2] : null;
 }
 
 // ── Multer (memory storage → Supabase) ────────────────────────────────────────
@@ -57,7 +63,7 @@ app.use(cors({
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return callback(null, true);
-    // Allow wildcard subdomains of fashionstores-addisdr.vercel.app
+    // Allow wildcard subdomains of your custom domain
     const vercelBase = 'fashionstores-addisdr.vercel.app';
     if (origin === `https://${vercelBase}` || new RegExp(`^https://[a-z0-9-]+\\.${vercelBase.replace(/\./g, '\\.')}$`).test(origin)) {
       return callback(null, true);
@@ -158,7 +164,7 @@ app.get('/api/superadmin/businesses/:id', requireSuperAdmin, wrapAsync(async (re
 }));
 
 app.post('/api/superadmin/businesses', requireSuperAdmin, upload.single('logo'), wrapAsync(async (req, res) => {
-  const { name, subdomain, tagline, about, phone, address,
+  const { name, subdomain, industry, tagline, about, phone, address,
     telegram_bot_token, telegram_chat_id, status,
     color_primary, color_secondary, color_tertiary } = req.body;
 
@@ -181,10 +187,10 @@ app.post('/api/superadmin/businesses', requireSuperAdmin, upload.single('logo'),
 
   try {
     const { rows } = await pool.query(`
-      INSERT INTO businesses (name, subdomain, logo_url, tagline, about, phone, address,
+      INSERT INTO businesses (name, subdomain, industry, logo_url, tagline, about, phone, address,
         telegram_bot_token, telegram_chat_id, status, color_primary, color_secondary, color_tertiary)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *
-    `, [name.trim(), subdomain.trim().toLowerCase(), logo_url, tagline || '', about || '',
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *
+    `, [name.trim(), subdomain.trim().toLowerCase(), industry || 'general', logo_url, tagline || '', about || '',
         phone || '', address || '', telegram_bot_token || '', telegram_chat_id || '',
         status === 'disabled' ? 'disabled' : 'active',
         color_primary || '#2563eb', color_secondary || '#7c3aed', color_tertiary || '#0891b2']);
@@ -200,7 +206,7 @@ app.put('/api/superadmin/businesses/:id', requireSuperAdmin, upload.single('logo
   if (bizRows.length === 0) return res.status(404).json({ error: 'Business not found' });
   const biz = bizRows[0];
 
-  const { name, subdomain, tagline, about, phone, address,
+  const { name, subdomain, industry, tagline, about, phone, address,
     telegram_bot_token, telegram_chat_id, status,
     color_primary, color_secondary, color_tertiary } = req.body;
 
@@ -221,13 +227,14 @@ app.put('/api/superadmin/businesses/:id', requireSuperAdmin, upload.single('logo
 
   try {
     await pool.query(`
-      UPDATE businesses SET name=$1, subdomain=$2, logo_url=$3, tagline=$4, about=$5,
-        phone=$6, address=$7, telegram_bot_token=$8, telegram_chat_id=$9,
-        status=$10, color_primary=$11, color_secondary=$12, color_tertiary=$13, updated_at=NOW()
-      WHERE id=$14
+      UPDATE businesses SET name=$1, subdomain=$2, industry=$3, logo_url=$4, tagline=$5, about=$6,
+        phone=$7, address=$8, telegram_bot_token=$9, telegram_chat_id=$10,
+        status=$11, color_primary=$12, color_secondary=$13, color_tertiary=$14, updated_at=NOW()
+      WHERE id=$15
     `, [
       name !== undefined ? name.trim() : biz.name,
       subdomain !== undefined ? subdomain.trim().toLowerCase() : biz.subdomain,
+      industry !== undefined ? industry : biz.industry,
       logo_url,
       tagline !== undefined ? tagline : biz.tagline,
       about !== undefined ? about : biz.about,
@@ -260,6 +267,28 @@ app.patch('/api/superadmin/businesses/:id/status', requireSuperAdmin, wrapAsync(
 app.delete('/api/superadmin/businesses/:id', requireSuperAdmin, wrapAsync(async (req, res) => {
   const { rows } = await pool.query('SELECT * FROM businesses WHERE id = $1', [req.params.id]);
   if (rows.length === 0) return res.status(404).json({ error: 'Business not found' });
+  const biz = rows[0];
+  try {
+    const sb = getSupabase();
+    const paths = [];
+    const { rows: products } = await pool.query(
+      "SELECT image_url FROM products WHERE business_id = $1 AND image_url != ''",
+      [req.params.id]
+    );
+    products.forEach(p => {
+      const fp = extractStoragePath(p.image_url);
+      if (fp) paths.push(fp);
+    });
+    if (biz.logo_url) {
+      const logoPath = extractStoragePath(biz.logo_url);
+      if (logoPath) paths.push(logoPath);
+    }
+    if (paths.length > 0) {
+      await sb.storage.from('store-uploads').remove(paths);
+    }
+  } catch (err) {
+    console.error('Failed to delete business images from storage:', err);
+  }
   await pool.query('DELETE FROM businesses WHERE id = $1', [req.params.id]);
   res.json({ success: true });
 }));
@@ -305,7 +334,7 @@ app.get('/api/business', wrapAsync(async (req, res) => {
 
 app.get('/api/business/by-subdomain/:subdomain', wrapAsync(async (req, res) => {
   const { rows } = await pool.query(
-    "SELECT id, name, subdomain, logo_url, tagline, about, phone, address, status FROM businesses WHERE subdomain = $1",
+    "SELECT id, name, subdomain, industry, logo_url, tagline, about, phone, address, status FROM businesses WHERE subdomain = $1",
     [req.params.subdomain]
   );
   if (rows.length === 0) return res.status(404).json({ error: 'Business not found' });
@@ -315,7 +344,7 @@ app.get('/api/business/by-subdomain/:subdomain', wrapAsync(async (req, res) => {
 
 app.get('/api/business/directory', wrapAsync(async (req, res) => {
   const { rows } = await pool.query(
-    "SELECT id, name, subdomain, logo_url, tagline, status FROM businesses WHERE status = 'active' ORDER BY name ASC"
+    "SELECT id, name, subdomain, industry, logo_url, tagline, status FROM businesses WHERE status = 'active' ORDER BY name ASC"
   );
   res.json(rows);
 }));
@@ -458,6 +487,18 @@ app.delete('/api/products/:id', wrapAsync(async (req, res) => {
   if (!biz) return;
   const { rows } = await pool.query('SELECT * FROM products WHERE id = $1 AND business_id = $2', [req.params.id, biz.id]);
   if (rows.length === 0) return res.status(404).json({ error: 'Product not found.' });
+  const product = rows[0];
+  if (product.image_url) {
+    try {
+      const sb = getSupabase();
+      const filePath = extractStoragePath(product.image_url);
+      if (filePath) {
+        await sb.storage.from('store-uploads').remove([filePath]);
+      }
+    } catch (err) {
+      console.error('Failed to delete product image from storage:', err);
+    }
+  }
   await pool.query('DELETE FROM products WHERE id = $1', [req.params.id]);
   res.json({ success: true });
 }));

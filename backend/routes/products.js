@@ -2,21 +2,24 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 const { pool, generateNextCode, requireBusiness } = require('../db');
+const { createClient } = require('@supabase/supabase-js');
 
-const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `product_${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`);
+function getSupabase() {
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+    throw new Error('SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in .env');
   }
-});
+  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+}
+
+function extractStoragePath(url) {
+  if (!url) return null;
+  const match = url.match(/\/object\/(public|authenticated)\/[^/]+\/(.+)/);
+  return match ? match[2] : null;
+}
+
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
@@ -92,7 +95,20 @@ router.post('/', upload.single('image'), wrapAsync(async (req, res) => {
   if (price === undefined || isNaN(Number(price))) return res.status(400).json({ error: 'Valid price is required.' });
 
   const code = await generateNextCode(biz.id);
-  const image_url = req.file ? `/uploads/${req.file.filename}` : '';
+  let image_url = '';
+  if (req.file) {
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const fileName = `products/${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
+    const sb = getSupabase();
+    const { error } = await sb.storage
+      .from('store-uploads')
+      .upload(fileName, req.file.buffer, { contentType: req.file.mimetype });
+    if (error) throw error;
+    const { data: { publicUrl } } = sb.storage
+      .from('store-uploads')
+      .getPublicUrl(fileName);
+    image_url = publicUrl;
+  }
 
   const { rows } = await pool.query(`
     INSERT INTO products (business_id, code, name, price, description, image_url, category_id, visible)
@@ -119,11 +135,28 @@ router.put('/:id', upload.single('image'), wrapAsync(async (req, res) => {
 
   let image_url = product.image_url;
   if (req.file) {
-    if (product.image_url && product.image_url.startsWith('/uploads/')) {
-      const oldPath = path.join(__dirname, '..', product.image_url);
-      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    if (product.image_url) {
+      try {
+        const sb = getSupabase();
+        const oldPath = extractStoragePath(product.image_url);
+        if (oldPath) {
+          await sb.storage.from('store-uploads').remove([oldPath]);
+        }
+      } catch (err) {
+        console.error('Failed to remove old product image:', err);
+      }
     }
-    image_url = `/uploads/${req.file.filename}`;
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const fileName = `products/${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
+    const sb = getSupabase();
+    const { error } = await sb.storage
+      .from('store-uploads')
+      .upload(fileName, req.file.buffer, { contentType: req.file.mimetype });
+    if (error) throw error;
+    const { data: { publicUrl } } = sb.storage
+      .from('store-uploads')
+      .getPublicUrl(fileName);
+    image_url = publicUrl;
   }
 
   await pool.query(`
@@ -164,9 +197,16 @@ router.delete('/:id', wrapAsync(async (req, res) => {
   if (rows.length === 0) return res.status(404).json({ error: 'Product not found.' });
   const product = rows[0];
 
-  if (product.image_url && product.image_url.startsWith('/uploads/')) {
-    const imgPath = path.join(__dirname, '..', product.image_url);
-    if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
+  if (product.image_url) {
+    try {
+      const sb = getSupabase();
+      const filePath = extractStoragePath(product.image_url);
+      if (filePath) {
+        await sb.storage.from('store-uploads').remove([filePath]);
+      }
+    } catch (err) {
+      console.error('Failed to delete product image from storage:', err);
+    }
   }
 
   await pool.query('DELETE FROM products WHERE id = $1', [req.params.id]);

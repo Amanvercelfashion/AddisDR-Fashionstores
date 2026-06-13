@@ -24,6 +24,12 @@ const upload = multer({
 
 const wrapAsync = fn => (req, res, next) => fn(req, res, next).catch(next);
 
+function extractStoragePath(url) {
+  if (!url) return null;
+  const match = url.match(/\/object\/(public|authenticated)\/[^/]+\/(.+)/);
+  return match ? match[2] : null;
+}
+
 async function requireSuperAdmin(req, res, next) {
   const token = req.headers['x-super-admin'];
   if (!token) return res.status(401).json({ error: 'Super admin auth required' });
@@ -73,7 +79,7 @@ router.get('/businesses/:id', requireSuperAdmin, wrapAsync(async (req, res) => {
 
 router.post('/businesses', requireSuperAdmin, upload.single('logo'), wrapAsync(async (req, res) => {
   const {
-    name, subdomain, tagline, about, phone, address,
+    name, subdomain, industry, tagline, about, phone, address,
     telegram_bot_token, telegram_chat_id, status,
     color_primary, color_secondary, color_tertiary
   } = req.body;
@@ -91,24 +97,24 @@ router.post('/businesses', requireSuperAdmin, upload.single('logo'), wrapAsync(a
     const ext = path.extname(req.file.originalname).toLowerCase();
     const fileName = `logos/${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
     const { error } = await sb.storage
-      .from('fashion-store-uploads')
+      .from('store-uploads')
       .upload(fileName, req.file.buffer, { contentType: req.file.mimetype });
     if (error) throw error;
     const { data: { publicUrl } } = sb.storage
-      .from('fashion-store-uploads')
+      .from('store-uploads')
       .getPublicUrl(fileName);
     logo_url = publicUrl;
   }
 
   try {
     const { rows } = await pool.query(`
-      INSERT INTO businesses (name, subdomain, logo_url, tagline, about, phone, address,
+      INSERT INTO businesses (name, subdomain, industry, logo_url, tagline, about, phone, address,
         telegram_bot_token, telegram_chat_id, status,
         color_primary, color_secondary, color_tertiary)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *
     `, [
-      name.trim(), subdomain.trim().toLowerCase(), logo_url,
+      name.trim(), subdomain.trim().toLowerCase(), industry || 'general', logo_url,
       tagline || '', about || '', phone || '', address || '',
       telegram_bot_token || '', telegram_chat_id || '',
       status === 'disabled' ? 'disabled' : 'active',
@@ -131,7 +137,7 @@ router.put('/businesses/:id', requireSuperAdmin, upload.single('logo'), wrapAsyn
   const biz = bizRows[0];
 
   const {
-    name, subdomain, tagline, about, phone, address,
+    name, subdomain, industry, tagline, about, phone, address,
     telegram_bot_token, telegram_chat_id, status,
     color_primary, color_secondary, color_tertiary
   } = req.body;
@@ -142,11 +148,11 @@ router.put('/businesses/:id', requireSuperAdmin, upload.single('logo'), wrapAsyn
     const ext = path.extname(req.file.originalname).toLowerCase();
     const fileName = `logos/${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
     const { error } = await sb.storage
-      .from('fashion-store-uploads')
+      .from('store-uploads')
       .upload(fileName, req.file.buffer, { contentType: req.file.mimetype });
     if (error) throw error;
     const { data: { publicUrl } } = sb.storage
-      .from('fashion-store-uploads')
+      .from('store-uploads')
       .getPublicUrl(fileName);
     logo_url = publicUrl;
   }
@@ -158,14 +164,15 @@ router.put('/businesses/:id', requireSuperAdmin, upload.single('logo'), wrapAsyn
   try {
     await pool.query(`
       UPDATE businesses SET
-        name = $1, subdomain = $2, logo_url = $3, tagline = $4, about = $5,
-        phone = $6, address = $7, telegram_bot_token = $8, telegram_chat_id = $9,
-        status = $10, color_primary = $11, color_secondary = $12, color_tertiary = $13,
+        name = $1, subdomain = $2, industry = $3, logo_url = $4, tagline = $5, about = $6,
+        phone = $7, address = $8, telegram_bot_token = $9, telegram_chat_id = $10,
+        status = $11, color_primary = $12, color_secondary = $13, color_tertiary = $14,
         updated_at = NOW()
-      WHERE id = $14
+      WHERE id = $15
     `, [
       name !== undefined ? name.trim() : biz.name,
       subdomain !== undefined ? subdomain.trim().toLowerCase() : biz.subdomain,
+      industry !== undefined ? industry : biz.industry,
       logo_url,
       tagline !== undefined ? tagline : biz.tagline,
       about !== undefined ? about : biz.about,
@@ -204,6 +211,28 @@ router.delete('/businesses/:id', requireSuperAdmin, wrapAsync(async (req, res) =
   const { rows } = await pool.query('SELECT * FROM businesses WHERE id = $1', [req.params.id]);
   if (rows.length === 0) return res.status(404).json({ error: 'Business not found' });
   const biz = rows[0];
+
+  try {
+    const sb = getSupabase();
+    const paths = [];
+    const { rows: products } = await pool.query(
+      "SELECT image_url FROM products WHERE business_id = $1 AND image_url != ''",
+      [req.params.id]
+    );
+    products.forEach(p => {
+      const fp = extractStoragePath(p.image_url);
+      if (fp) paths.push(fp);
+    });
+    if (biz.logo_url) {
+      const logoPath = extractStoragePath(biz.logo_url);
+      if (logoPath) paths.push(logoPath);
+    }
+    if (paths.length > 0) {
+      await sb.storage.from('store-uploads').remove(paths);
+    }
+  } catch (err) {
+    console.error('Failed to delete business images from storage:', err);
+  }
 
   await pool.query('DELETE FROM businesses WHERE id = $1', [req.params.id]);
   res.json({ success: true });
