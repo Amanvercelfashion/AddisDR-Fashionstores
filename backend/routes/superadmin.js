@@ -97,11 +97,11 @@ router.post('/businesses', requireSuperAdmin, upload.single('logo'), wrapAsync(a
     const ext = path.extname(req.file.originalname).toLowerCase();
     const fileName = `logos/${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
     const { error } = await sb.storage
-      .from('store-uploads')
+      .from('fashion-store-uploads')
       .upload(fileName, req.file.buffer, { contentType: req.file.mimetype });
     if (error) throw error;
     const { data: { publicUrl } } = sb.storage
-      .from('store-uploads')
+      .from('fashion-store-uploads')
       .getPublicUrl(fileName);
     logo_url = publicUrl;
   }
@@ -148,11 +148,11 @@ router.put('/businesses/:id', requireSuperAdmin, upload.single('logo'), wrapAsyn
     const ext = path.extname(req.file.originalname).toLowerCase();
     const fileName = `logos/${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
     const { error } = await sb.storage
-      .from('store-uploads')
+      .from('fashion-store-uploads')
       .upload(fileName, req.file.buffer, { contentType: req.file.mimetype });
     if (error) throw error;
     const { data: { publicUrl } } = sb.storage
-      .from('store-uploads')
+      .from('fashion-store-uploads')
       .getPublicUrl(fileName);
     logo_url = publicUrl;
   }
@@ -228,7 +228,7 @@ router.delete('/businesses/:id', requireSuperAdmin, wrapAsync(async (req, res) =
       if (logoPath) paths.push(logoPath);
     }
     if (paths.length > 0) {
-      await sb.storage.from('store-uploads').remove(paths);
+      await sb.storage.from('fashion-store-uploads').remove(paths);
     }
   } catch (err) {
     console.error('Failed to delete business images from storage:', err);

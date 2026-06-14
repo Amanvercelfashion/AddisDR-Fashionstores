@@ -101,11 +101,11 @@ router.post('/', upload.single('image'), wrapAsync(async (req, res) => {
     const fileName = `products/${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
     const sb = getSupabase();
     const { error } = await sb.storage
-      .from('store-uploads')
+      .from('fashion-store-uploads')
       .upload(fileName, req.file.buffer, { contentType: req.file.mimetype });
     if (error) throw error;
     const { data: { publicUrl } } = sb.storage
-      .from('store-uploads')
+      .from('fashion-store-uploads')
       .getPublicUrl(fileName);
     image_url = publicUrl;
   }
@@ -140,7 +140,7 @@ router.put('/:id', upload.single('image'), wrapAsync(async (req, res) => {
         const sb = getSupabase();
         const oldPath = extractStoragePath(product.image_url);
         if (oldPath) {
-          await sb.storage.from('store-uploads').remove([oldPath]);
+          await sb.storage.from('fashion-store-uploads').remove([oldPath]);
         }
       } catch (err) {
         console.error('Failed to remove old product image:', err);
@@ -150,11 +150,11 @@ router.put('/:id', upload.single('image'), wrapAsync(async (req, res) => {
     const fileName = `products/${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
     const sb = getSupabase();
     const { error } = await sb.storage
-      .from('store-uploads')
+      .from('fashion-store-uploads')
       .upload(fileName, req.file.buffer, { contentType: req.file.mimetype });
     if (error) throw error;
     const { data: { publicUrl } } = sb.storage
-      .from('store-uploads')
+      .from('fashion-store-uploads')
       .getPublicUrl(fileName);
     image_url = publicUrl;
   }
@@ -202,7 +202,7 @@ router.delete('/:id', wrapAsync(async (req, res) => {
       const sb = getSupabase();
       const filePath = extractStoragePath(product.image_url);
       if (filePath) {
-        await sb.storage.from('store-uploads').remove([filePath]);
+        await sb.storage.from('fashion-store-uploads').remove([filePath]);
       }
     } catch (err) {
       console.error('Failed to delete product image from storage:', err);

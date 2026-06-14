@@ -30,7 +30,7 @@ async function uploadToSupabase(buffer, fileName, contentType) {
   let error;
   try {
     ({ error } = await sb.storage
-      .from('store-uploads')
+      .from('fashion-store-uploads')
       .upload(fileName, buffer, { contentType, upsert: true }));
   } catch (err) {
     console.log('[uploadToSupabase] upload threw:', JSON.stringify(err));
@@ -41,7 +41,7 @@ async function uploadToSupabase(buffer, fileName, contentType) {
     throw error;
   }
   const { data: { publicUrl } } = sb.storage
-    .from('store-uploads')
+    .from('fashion-store-uploads')
     .getPublicUrl(fileName);
   return publicUrl;
 }
@@ -295,7 +295,7 @@ app.delete('/api/superadmin/businesses/:id', requireSuperAdmin, wrapAsync(async 
       if (logoPath) paths.push(logoPath);
     }
     if (paths.length > 0) {
-      await sb.storage.from('store-uploads').remove(paths);
+      await sb.storage.from('fashion-store-uploads').remove(paths);
     }
   } catch (err) {
     console.error('Failed to delete business images from storage:', err);
@@ -504,7 +504,7 @@ app.delete('/api/products/:id', wrapAsync(async (req, res) => {
       const sb = getSupabase();
       const filePath = extractStoragePath(product.image_url);
       if (filePath) {
-        await sb.storage.from('store-uploads').remove([filePath]);
+        await sb.storage.from('fashion-store-uploads').remove([filePath]);
       }
     } catch (err) {
       console.error('Failed to delete product image from storage:', err);

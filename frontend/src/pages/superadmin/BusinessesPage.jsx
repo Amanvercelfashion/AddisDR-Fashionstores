@@ -448,7 +448,7 @@ function HamburgerMenu({ biz, token, onEdit, onToggle, onDelete, onPasswordSet }
           </a>
 
           <a
-            href={`/${biz.subdomain}`}
+            href={`https://stores-addisdr.vercel.app/${biz.subdomain}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
