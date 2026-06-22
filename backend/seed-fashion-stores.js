@@ -11,6 +11,19 @@ const SEED = {
   adminPassword: 'store2024',
 };
 
+const FASHION_PHOTOS = [
+  '1576566588028-4147f3842f27','1556909114-f6e7ad7d3136','1595777457583-95e059d581b8',
+  '1541099649105-f69ad21f3246','1583496661160-fb5886a0aaaa','1624378439575-d8705ad7ae80',
+  '1539533113208-f6df8cc8b543','1520975954732-35dd22299614','1605518216938-7c31b7b14ad0',
+  '1548036328-c9fa89d128fa','1601925260368-ae2f83cf8b7f','1635767798638-3e25273a8236',
+  '1591195853828-11db59a44f6b','1617130673163-fc1b5efae7d1','1539008835657-9e8e9680c956',
+  '1521572163474-6864f9cf17ab','1596755094514-f87e34085b2c','1594938298603-c8148c4dae35',
+  '1583743814966-8936f5b7be1a','1576995853123-5a10305d93c0','1566174053879-31528523f8ae',
+  '1515372039744-b8f02a3ae446','1553062407-98eeb64c6a62','1572635196237-14b3f281503f',
+];
+let fpIdx = 0;
+const FIMG = () => `https://images.unsplash.com/photo-${FASHION_PHOTOS[fpIdx++ % FASHION_PHOTOS.length]}?w=600&q=80`;
+
 const stores = [
   {
     name: 'Chic Boutique',
@@ -26,9 +39,9 @@ const stores = [
       {
         name: 'Tops',
         products: [
-          { name: 'Floral Printed Blouse', price: 1549, description: 'Lightweight chiffon blouse with all-over floral print. Perfect for office or casual outings.' },
-          { name: 'Cashmere Crew Neck Sweater', price: 2199, description: 'Luxuriously soft cashmere blend sweater in classic crew neck style.' },
-          { name: 'Silk Camisole Top', price: 1299, description: 'Elegant silk camisole with adjustable straps and delicate lace trim.' },
+          { name: 'Floral Printed Blouse', price: 1549, description: 'Lightweight chiffon blouse with all-over floral print. Perfect for office or casual outings.', image_url: FIMG() },
+          { name: 'Cashmere Crew Neck Sweater', price: 2199, description: 'Luxuriously soft cashmere blend sweater in classic crew neck style.', image_url: FIMG() },
+          { name: 'Silk Camisole Top', price: 1299, description: 'Elegant silk camisole with adjustable straps and delicate lace trim.', image_url: FIMG() },
         ],
       },
       {
@@ -223,8 +236,8 @@ async function seed() {
           productIndex++;
           const code = generateCode(productIndex);
           await client.query(
-            'INSERT INTO products (business_id, code, name, price, description, category_id, visible) VALUES ($1, $2, $3, $4, $5, $6, 1)',
-            [businessId, code, product.name, product.price, product.description, categoryId]
+            'INSERT INTO products (business_id, code, name, price, description, image_url, category_id, visible) VALUES ($1, $2, $3, $4, $5, $6, $7, 1)',
+            [businessId, code, product.name, product.price, product.description, FIMG(), categoryId]
           );
           console.log(`      ${code} - ${product.name} ($${product.price})`);
         }
